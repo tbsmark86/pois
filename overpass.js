@@ -67,7 +67,10 @@ function makePoi(ele, name, sym) {
 export function findWater(box) {
     const query = `
 	[out:json];
-	node[amenity=drinking_water]${box2poly(box)};
+	node[amenity=drinking_water]
+	    [access!=private]
+	    [access!=noe]
+	    ${box2poly(box)};
 	out;
     `;
     return overpass(query).then((data) => {
@@ -149,10 +152,11 @@ export function findShelter(box) {
     const query = `
 	[out:json];
 	node[amenity=shelter]
+	    [access!=no]
+	    [access!=private]
 	    [shelter_type!=changing_rooms]
 	    [shelter_type!=field_shelter]
 	    [smoking!=dedicated]
-            [bench!=no]
 	    [!fixme]
 	    ${box2poly(box)};
 	out;
