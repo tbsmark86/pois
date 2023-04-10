@@ -67,9 +67,10 @@ function makePoi(ele, name, sym) {
 export function findWater(box) {
     const query = `
 	[out:json];
-	node[amenity=drinking_water]
+	node[amenity~"(^drinking_water|water_point$)"]
 	    [access!=private]
-	    [access!=noe]
+	    [access!=no]
+	    [access!=permissive]
 	    ${box2poly(box)};
 	out;
     `;
@@ -187,6 +188,79 @@ export function findCemetery(box) {
 	for(let ele of data.elements) {
 	    deleteMatching(ele.tags, /^(addr:)/);
 	    res.push(makePoi(ele, 'Friedhof'));
+	}
+
+	return res;
+    });
+}
+
+export function findShops(box) {
+    const query = `
+	[out:json];
+	nw[shop~"^(yes|kiosk|convenience|supermarket|bakery)$"]
+	    ${box2poly(box)};
+	out center;
+    `;
+    return overpass(query).then((data) => {
+	let res = [];
+	for(let ele of data.elements) {
+	    let type = ele.tags.shop;
+	    res.push(makePoi(ele, type, 'Shoping Center'));
+	}
+
+	return res;
+    });
+}
+
+export function findFood(box) {
+    const query = `
+	[out:json];
+	node[amenity~"^(biergarten|cafe|fast_food|food_court|restaurant)$"]
+	    ${box2poly(box)};
+	out;
+    `;
+    return overpass(query).then((data) => {
+	let res = [];
+	for(let ele of data.elements) {
+	    let type = ele.tags.amenity;
+	    res.push(makePoi(ele, type, 'Italian Food'));
+	}
+
+	return res;
+    });
+}
+
+export function findRepair(box) {
+    const query = `
+	[out:json];
+	node[shop=bicycle]
+	    ${box2poly(box)};
+	out;
+    `;
+    return overpass(query).then((data) => {
+	let res = [];
+	for(let ele of data.elements) {
+	    res.push(makePoi(ele, 'Repair', 'Car'));
+	}
+
+	return res;
+    });
+}
+
+export function findCamping(box) {
+    const query = `
+	[out:json];
+	nw[tourism=camp_site]
+	    [tents!=no]
+	    [group_only!=yes]
+	    [nudism!=yes][nudism!=designated]
+	    ${box2poly(box)};
+	out center;
+    `;
+    return overpass(query).then((data) => {
+	let res = [];
+	for(let ele of data.elements) {
+	    res.push(makePoi(ele, 'Camping', 'Campground'));
 	}
 
 	return res;
