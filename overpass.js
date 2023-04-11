@@ -52,6 +52,8 @@ function makePoi(ele, name, sym) {
     // default ignored tags:
     delete ele.tags.amenity;
     delete ele.tags.wheelchair;
+    // don't need exact street name its already on map ...
+    deleteMatching(ele.tags, /^(addr:)/);
     return {
 	lat: ele.center ? ele.center.lat : ele.lat,
 	lon: ele.center ? ele.center.lon : ele.lon,
@@ -59,6 +61,56 @@ function makePoi(ele, name, sym) {
 	text: tags2str(ele.tags),
 	sym,
     };
+}
+
+const R = 6371000;
+/* Source:
+ * https://github.com/Leaflet/Leaflet/blob/8c38dbafb614a887a546e64aff913dc7feda9a0d/src/geo/crs/CRS.Earth.js
+ *
+ * Note the different type to version in gpx_box.js avoids
+ * creating new object.
+ */
+function calcDistance(latlng1, latlng2) {
+    const rad = Math.PI / 180,
+	lat1 = latlng1.lat * rad,
+	lat2 = latlng2.lat * rad,
+	sinDLat = Math.sin((latlng2.lat - latlng1.lat) * rad / 2),
+	sinDLon = Math.sin((latlng2.lon - latlng1.lon) * rad / 2),
+	a = sinDLat * sinDLat + Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon,
+	c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+/* Mark points that are near each other with an extra field 'skip' 
+ * distance is in meters
+ * prefer function(cur, other) return the element to skip.
+ */
+function filterNearbyPois(pois, distance, prefer) {
+    for(let i = 0; i < pois.length; i++) {
+	let ele = pois[i];
+	if(ele.skip) {
+	    continue;
+	}
+
+	// Assuming the total number of POIs is rather low (rarely > 1000)
+	// a linear search should be fast enough and is easy done.
+	const pos = ele.center ? ele.center : ele;
+	for(let j = i+1; j < pois.length; j++) {
+	    const other = pois[j];
+	    const otherPos = other.center ? other.center : other;
+	    if(!other.done && calcDistance(pos, otherPos) < distance) {
+		const decision = prefer(ele, other);
+		if(decision === ele) {
+		    ele.skip = true;
+		    ele = other;
+		} else if(decision == null) {
+		    // keep both
+		} else {
+		    other.skip = true;
+		}
+	    }
+	}
+    }
 }
 
 /**
@@ -76,8 +128,12 @@ export function findWater(box) {
     `;
     return overpass(query).then((data) => {
 	let res = [];
+	// don't duplicate multiple taps in same location
+	filterNearbyPois(data.elements, 150, (ele, other) => {
+	    return other;
+	});
 	for(let ele of data.elements) {
-	    if(ele.tags.drinking_water && ele.tags.drinking_water !== 'yes') {
+	    if(ele.skip || ele.tags.drinking_water && ele.tags.drinking_water !== 'yes') {
 		// should not happen, but maybe ...
 		continue;
 	    }
@@ -116,7 +172,7 @@ export function findTanke(box) {
 	    delete ele.tags.operator; // owner name
 	    delete ele.tags.car_wash;
 	    delete ele.tags.website;
-	    deleteMatching(ele.tags, /^(addr:|brand|fuel:|payment:)/);
+	    deleteMatching(ele.tags, /^(brand|fuel:|payment:)/);
 
 	    res.push(makePoi(ele, name, 'Gas Statiion'));
 	}
@@ -138,9 +194,15 @@ export function findToilets(box) {
     `;
 
     return overpass(query).then((data) => {
+	filterNearbyPois(data.elements, 100, (ele, other) => {
+	    return other;
+	});
 	let res = [];
 	for(let ele of data.elements) {
-	    deleteMatching(ele.tags, /^(addr:|toilets:)/);
+	    if(ele.skip) {
+		continue;
+	    }
+	    deleteMatching(ele.tags, /^(toilets:)/);
 	    res.push(makePoi(ele, 'WC'));
 	}
 
@@ -164,10 +226,17 @@ export function findShelter(box) {
     `;
 
     return overpass(query).then((data) => {
+	// don't duplicate multiple shelters in same location
+	filterNearbyPois(data.elements, 200, (ele, other) => {
+	    return other;
+	});
+
 	let res = [];
 	for(let ele of data.elements) {
+	    if(ele.skip) {
+		continue;
+	    }
 	    let name = ele.tags.shelter_type || 'shelter';
-	    deleteMatching(ele.tags, /^(addr:)/);
 	    res.push(makePoi(ele, name));
 	}
 
@@ -186,7 +255,6 @@ export function findCemetery(box) {
     return overpass(query).then((data) => {
 	let res = [];
 	for(let ele of data.elements) {
-	    deleteMatching(ele.tags, /^(addr:)/);
 	    res.push(makePoi(ele, 'Friedhof'));
 	}
 
@@ -197,17 +265,33 @@ export function findCemetery(box) {
 export function findShops(box) {
     const query = `
 	[out:json];
-	nw[shop~"^(yes|kiosk|convenience|supermarket|bakery)$"]
+	nw[shop~"^(convenience|supermarket|bakery)$"]
 	    ${box2poly(box)};
 	out center;
     `;
     return overpass(query).then((data) => {
+	// If many points are nearby prefer supermarkets/convenience
+	// store an drop the rest.
+	filterNearbyPois(data.elements, 500, (ele, other) => {
+	    const type = ele.tags.shop;
+	    const otherType = other.tags.shop;
+	    if(otherType === 'supermarket' && type !== otherType) {
+		return ele; // skip current keep next
+	    } else if(otherType === 'convenience' && type !== 'supermarket') {
+		return ele; // skip current keep next
+	    } else if(otherType === type) {
+		return other; // skip other
+	    }
+	    return null; // keep both
+	});
 	let res = [];
 	for(let ele of data.elements) {
+	    if(ele.skip) {
+		continue;
+	    }
 	    let type = ele.tags.shop;
 	    res.push(makePoi(ele, type, 'Shoping Center'));
 	}
-
 	return res;
     });
 }
@@ -220,8 +304,22 @@ export function findFood(box) {
 	out;
     `;
     return overpass(query).then((data) => {
+	// Skip nearby and prefer fast_food
+	filterNearbyPois(data.elements, 1000, (ele, other) => {
+	    const type = ele.tags.amenity;
+	    const otherType = other.tags.amenity;
+	    if(otherType === 'fast_food' && type !== otherType) {
+		return ele;
+	    } else  {
+		return other; // skip other
+	    }
+	});
+
 	let res = [];
 	for(let ele of data.elements) {
+	    if(ele.skip) {
+		continue;
+	    }
 	    let type = ele.tags.amenity;
 	    res.push(makePoi(ele, type, 'Italian Food'));
 	}
@@ -238,8 +336,14 @@ export function findRepair(box) {
 	out;
     `;
     return overpass(query).then((data) => {
+	filterNearbyPois(data.elements, 100, (ele, other) => {
+	    return other;
+	});
 	let res = [];
 	for(let ele of data.elements) {
+	    if(ele.skip) {
+		continue;
+	    }
 	    res.push(makePoi(ele, 'Repair', 'Car'));
 	}
 
