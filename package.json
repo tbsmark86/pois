@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Load POIs near a GPX Route",
   "type": "module",
-  "main": "index.js",
+  "main": "cli.js",
   "scripts": {
-    "run": "node index.js"
+    "run": "node cli.js"
   },
   "author": "Tobias Mark",
   "license": "MIT",
