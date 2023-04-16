@@ -33,7 +33,7 @@ async function  make_kml_document(folder, name, func, open = '1') {
 
 export async function process_gpx_string(input, filename) {
     console.log(`Parse Input ${filename}`);
-    const parser = new GpxParser.default();
+    const parser = GpxParser.default ? new GpxParser.default() : new GpxParser();
     const gpx = await parser.parse(input);
 
     const multi_trk = gpx.trk.length;

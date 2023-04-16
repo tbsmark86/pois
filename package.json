@@ -5,11 +5,16 @@
   "type": "module",
   "main": "cli.js",
   "scripts": {
-    "run": "node cli.js"
+    "run": "node cli.js",
+    "bundle": "node_modules/.bin/asbundle --cgjs browser.js > web.bundle.js"
   },
   "author": "Tobias Mark",
   "license": "MIT",
   "dependencies": {
+    "events": "github:browserify/events",
     "gpx-parser-ts": "^1.0.7"
+  },
+  "devDependencies": {
+    "asbundle": "^2.7.0"
   }
 }

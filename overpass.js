@@ -140,7 +140,7 @@ export function findWater(box) {
 	    // not useful (for this case)
 	    delete ele.tags.drinking_water;
 
-	    res.push(makePoi(ele, 'Wasser', 'Drinking Water'));
+	    res.push(makePoi(ele, 'Water', 'Drinking Water'));
 	}
 
 	return res;
@@ -255,7 +255,7 @@ export function findCemetery(box) {
     return overpass(query).then((data) => {
 	let res = [];
 	for(let ele of data.elements) {
-	    res.push(makePoi(ele, 'Friedhof'));
+	    res.push(makePoi(ele, 'Cemetery'));
 	}
 
 	return res;
