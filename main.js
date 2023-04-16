@@ -16,6 +16,9 @@ async function  make_kml_document(folder, name, func, open = '1') {
     }
     let doc = {
 	'name': {_: name},
+	// try to control default display in app if possible
+	// (not all apps support his)
+	'visibility': {_: open},
 	'open': {_: open},
 	'Placemark': [],
     };

@@ -99,5 +99,6 @@ async function handleUpload(evt) {
 
 window.startApp = function() {
     document.getElementById('gpxfile').addEventListener('change', handleUpload);
+    log(false); // clear
     log('Ready!');
 };
