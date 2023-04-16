@@ -8,7 +8,7 @@
     "run": "node cli.js",
     "bundle": "node_modules/.bin/asbundle --cgjs browser.js > web.bundle.js"
   },
-  "author": "Tobias Mark",
+  "author": "Tobias",
   "license": "MIT",
   "dependencies": {
     "events": "github:browserify/events",
