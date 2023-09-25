@@ -113,6 +113,37 @@ function filterNearbyPois(pois, distance, prefer) {
     }
 }
 
+function isClosed(str) {
+    if(str) {
+	str = str.toLowerCase();
+	return str.includes('abandoned') || str.includes('closed');
+    }
+    return false;
+}
+
+/* Filter out by typical closed markers. Do this after the query
+ * because it would make the querys way to complex. */
+function filterOld(pois, disused_kind) {
+    return pois.filter((poi) => {
+	if(poi.tags.abandoned || poi.tags[`abandoned:${disused_kind}`]) {
+	    // https://wiki.openstreetmap.org/wiki/Key:abandoned
+	    return false;
+	} else if(poi.tags.disused || poi.tags[`disused:${disused_kind}`]) {
+	    // https://wiki.openstreetmap.org/wiki/Key:disused
+	    return false;
+	} else if(isClosed(poi.tags.description) || isClosed(poi.tags.name)) {
+	    // real life data sometimes
+	    return false;
+	} else if(poi.tags.opening_hours === 'closed' || poi.tags.opening_hours === 'off') {
+	    // permanently close
+	    // https://wiki.openstreetmap.org/wiki/Key:opening_hours
+	    return false;
+	}
+	return true;
+    });
+}
+
+
 /**
  * Box is a list of points that forms a polygon
  */
@@ -127,12 +158,13 @@ export function findWater(box) {
 	out;
     `;
     return overpass(query).then((data) => {
-	let res = [];
+	let elements = filterOld(data.elements, 'amenity');
 	// don't duplicate multiple taps in same location
-	filterNearbyPois(data.elements, 150, (ele, other) => {
+	filterNearbyPois(elements, 150, (ele, other) => {
 	    return other;
 	});
-	for(let ele of data.elements) {
+	let res = [];
+	for(let ele of elements) {
 	    if(ele.skip || ele.tags.drinking_water && ele.tags.drinking_water !== 'yes') {
 		// should not happen, but maybe ...
 		continue;
@@ -163,16 +195,16 @@ export function findTanke(box) {
     `;
 
     return overpass(query).then((data) => {
+	let elements = filterOld(data.elements, 'shop');
 	let res = [];
-	for(let ele of data.elements) {
+	for(let ele of elements) {
 	    let name = ele.tags.brand || 'Tanke';
 
 	    // not useful (for this case) 
 	    // to reduce spam when reading the description
 	    delete ele.tags.operator; // owner name
 	    delete ele.tags.car_wash;
-	    delete ele.tags.website;
-	    deleteMatching(ele.tags, /^(brand|fuel:|payment:)/);
+	    deleteMatching(ele.tags, /^(fuel:|payment:)/);
 
 	    res.push(makePoi(ele, name, 'Gas Statiion'));
 	}
@@ -194,11 +226,12 @@ export function findToilets(box) {
     `;
 
     return overpass(query).then((data) => {
-	filterNearbyPois(data.elements, 100, (ele, other) => {
+	let elements = filterOld(data.elements, 'amenity');
+	filterNearbyPois(elements, 100, (ele, other) => {
 	    return other;
 	});
 	let res = [];
-	for(let ele of data.elements) {
+	for(let ele of elements) {
 	    if(ele.skip) {
 		continue;
 	    }
@@ -226,13 +259,14 @@ export function findShelter(box) {
     `;
 
     return overpass(query).then((data) => {
+	let elements = filterOld(data.elements, 'amenity');
 	// don't duplicate multiple shelters in same location
-	filterNearbyPois(data.elements, 200, (ele, other) => {
+	filterNearbyPois(elements, 200, (ele, other) => {
 	    return other;
 	});
 
 	let res = [];
-	for(let ele of data.elements) {
+	for(let ele of elements) {
 	    if(ele.skip) {
 		continue;
 	    }
@@ -253,8 +287,9 @@ export function findCemetery(box) {
     `;
 
     return overpass(query).then((data) => {
+	let elements = filterOld(data.elements, 'landuse');
 	let res = [];
-	for(let ele of data.elements) {
+	for(let ele of elements) {
 	    res.push(makePoi(ele, 'Cemetery'));
 	}
 
@@ -270,9 +305,10 @@ export function findShops(box) {
 	out center;
     `;
     return overpass(query).then((data) => {
+	let elements = filterOld(data.elements, 'shop');
 	// If many points are nearby prefer supermarkets/convenience
 	// store an drop the rest.
-	filterNearbyPois(data.elements, 500, (ele, other) => {
+	filterNearbyPois(elements, 500, (ele, other) => {
 	    const type = ele.tags.shop;
 	    const otherType = other.tags.shop;
 	    if(otherType === 'supermarket' && type !== otherType) {
@@ -285,7 +321,7 @@ export function findShops(box) {
 	    return null; // keep both
 	});
 	let res = [];
-	for(let ele of data.elements) {
+	for(let ele of elements) {
 	    if(ele.skip) {
 		continue;
 	    }
@@ -304,8 +340,9 @@ export function findFood(box) {
 	out;
     `;
     return overpass(query).then((data) => {
+	let elements = filterOld(data.elements, 'amenity');
 	// Skip nearby and prefer fast_food
-	filterNearbyPois(data.elements, 1000, (ele, other) => {
+	filterNearbyPois(elements, 1000, (ele, other) => {
 	    const type = ele.tags.amenity;
 	    const otherType = other.tags.amenity;
 	    if(otherType === 'fast_food' && type !== otherType) {
@@ -316,7 +353,7 @@ export function findFood(box) {
 	});
 
 	let res = [];
-	for(let ele of data.elements) {
+	for(let ele of elements) {
 	    if(ele.skip) {
 		continue;
 	    }
@@ -336,11 +373,12 @@ export function findRepair(box) {
 	out;
     `;
     return overpass(query).then((data) => {
-	filterNearbyPois(data.elements, 100, (ele, other) => {
+	let elements = filterOld(data.elements, 'shop');
+	filterNearbyPois(elements, 100, (ele, other) => {
 	    return other;
 	});
 	let res = [];
-	for(let ele of data.elements) {
+	for(let ele of elements) {
 	    if(ele.skip) {
 		continue;
 	    }
@@ -362,8 +400,9 @@ export function findCamping(box) {
 	out center;
     `;
     return overpass(query).then((data) => {
+	let elements = filterOld(data.elements, 'tourism');
 	let res = [];
-	for(let ele of data.elements) {
+	for(let ele of elements) {
 	    res.push(makePoi(ele, 'Camping', 'Campground'));
 	}
 
