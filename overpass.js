@@ -197,8 +197,41 @@ export function findTanke(box) {
 
     return overpass(query).then((data) => {
 	let elements = filterOld(data.elements, 'shop');
+	elements = elements.filter((ele) => {
+	    // Note: The following filters might remove some useable stations
+	    // because of missing tags - but from experience it's more better
+	    // to have less with higher quality on the map
+	    if(ele.tags.automated === 'yes') {
+		// these typical have 24/7 because well automated ... but
+		// nothing to buy there.
+		// Guess that if not also tagged with shop there is none and
+		// especially none which is open 24/7!
+		if(!ele.tags.shop && !ele.tags.car_wash) {
+		    return false;
+		}
+	    } else if(ele.tags['fuel:cng'] === 'yes' || ele.tags['fuel:lpg'] === 'yes') {
+		// try guessing if this a lpg-only station
+		if(ele.tags['fuel:diesel'] && ele.tags['fuel:diesel'] !== 'no') {
+		    // other fuel available
+		} else if(ele.tags.brand || ele.tags.shop || ele.tags.compressed_air || ele.tags.car_wash) {
+		    // shop ...; known brand or air station
+		} else {
+		    return false;
+		}
+
+	    }
+	    return true;
+	});
 	return elements.map((ele) => {
 	    let name = ele.tags.brand || '24h Gas';
+	    if(ele.tags.automated === 'yes') {
+		// automated is likely that opening_hours not reflect the
+		// shop hours!
+		name += '?';
+	    } else if(ele.tags.self_service === 'yes' && !ele.tags.shop) {
+		// similar
+		name += '?';
+	    }
 
 	    // not useful (for this case) 
 	    // to reduce spam when reading the description
