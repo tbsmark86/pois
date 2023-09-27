@@ -86,6 +86,9 @@ function calcDistance(latlng1, latlng2) {
  * prefer function(cur, other) return the element to skip.
  */
 function filterNearbyPois(pois, distance, prefer) {
+    if(!distance) {
+	return pois;
+    }
     for(let i = 0; i < pois.length; i++) {
 	let ele = pois[i];
 	if(ele.skip) {
@@ -148,7 +151,7 @@ function filterOld(pois, disused_kind) {
 /**
  * Box is a list of points that forms a polygon
  */
-export function findWater(box) {
+export function findWater(box, filter = 150) {
     const query = `
 	[out:json];
 	node[amenity~"(^drinking_water|water_point$)"]
@@ -161,7 +164,7 @@ export function findWater(box) {
     return overpass(query).then((data) => {
 	let elements = filterOld(data.elements, 'amenity');
 	// don't duplicate multiple taps in same location
-	elements = filterNearbyPois(elements, 150, (ele, other) => {
+	elements = filterNearbyPois(elements, filter, (ele, other) => {
 	    return other;
 	});
 	elements = elements.filter((ele) => {
@@ -244,7 +247,7 @@ export function findTanke(box) {
     });
 }
 
-export function findToilets(box) {
+export function findToilets(box, filter = 100) {
     const query = `
 	[out:json];
 	node[amenity=toilets]
@@ -258,7 +261,7 @@ export function findToilets(box) {
 
     return overpass(query).then((data) => {
 	let elements = filterOld(data.elements, 'amenity');
-	elements = filterNearbyPois(elements, 100, (ele, other) => {
+	elements = filterNearbyPois(elements, filter, (ele, other) => {
 	    return other;
 	});
 	return elements.map((ele) => {
@@ -269,7 +272,7 @@ export function findToilets(box) {
 }
 
 // https://wiki.openstreetmap.org/wiki/Key:shelter_type
-export function findShelter(box) {
+export function findShelter(box, filter = 200) {
     const query = `
 	[out:json];
 	node[amenity=shelter]
@@ -286,7 +289,7 @@ export function findShelter(box) {
     return overpass(query).then((data) => {
 	let elements = filterOld(data.elements, 'amenity');
 	// don't duplicate multiple shelters in same location
-	elements = filterNearbyPois(elements, 200, (ele, other) => {
+	elements = filterNearbyPois(elements, filter, (ele, other) => {
 	    return other;
 	});
 	return elements.map((ele) => {
@@ -312,7 +315,7 @@ export function findCemetery(box) {
     });
 }
 
-export function findShops(box) {
+export function findShops(box, filter = 500) {
     const query = `
 	[out:json];
 	nw[shop~"^(convenience|supermarket|bakery)$"]
@@ -323,7 +326,7 @@ export function findShops(box) {
 	let elements = filterOld(data.elements, 'shop');
 	// If many points are nearby prefer supermarkets/convenience
 	// store an drop the rest.
-	elements = filterNearbyPois(elements, 500, (ele, other) => {
+	elements = filterNearbyPois(elements, filter, (ele, other) => {
 	    const type = ele.tags.shop;
 	    const otherType = other.tags.shop;
 	    if(otherType === 'supermarket' && type !== otherType) {
@@ -342,7 +345,7 @@ export function findShops(box) {
     });
 }
 
-export function findFood(box) {
+export function findFood(box, filter = 1000) {
     const query = `
 	[out:json];
 	node[amenity~"^(biergarten|cafe|fast_food|food_court|restaurant)$"]
@@ -352,7 +355,7 @@ export function findFood(box) {
     return overpass(query).then((data) => {
 	let elements = filterOld(data.elements, 'amenity');
 	// Skip nearby and prefer fast_food
-	elements = filterNearbyPois(elements, 1000, (ele, other) => {
+	elements = filterNearbyPois(elements, filter, (ele, other) => {
 	    const type = ele.tags.amenity;
 	    const otherType = other.tags.amenity;
 	    if(otherType === 'fast_food' && type !== otherType) {

@@ -3,27 +3,98 @@
     <title>GPX Route POIs finder</title>
     <script src="web.bundle.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/chota@latest">
+    <style>
+    .poi-opts {
+      display: grid;
+      grid-template-columns: auto 50% 1fr;
+      grid-template-rows: auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .poi-opts label { grid-column: 1/1; }
+    .poi-opts label.sub { text-indent: 2em; font-style: italic  }
+    .poi-opts input { grid-column: 2/2; }
+    .poi-opts output { grid-column: 3/3; }
+    </style>
 <head>
 <body onload="window.startApp();" style="margin:10px">
     <h1>Find POIs for your Cycling Route</h1>
-    <form>
-	<label>GPX-File:
-	    <input type=file id=gpxfile accept="application/gpx, application/gpx+xml" multiple="true">
-	<label>
+    <a href="#info">Explanation &amp; Privacy</a>
+    <form style="margin-top:0.5em">
 	<div class=card>
-	    <header><h4>Protocol</h4></header>
+	    <header><label for=gpxfile>Select GPX-File(s)</label></header>
+	    <input type=file id=gpxfile accept="application/gpx, application/gpx+xml" multiple="true" style="border:none">
+	</div>
+	<div class=card>
+	     <header><h4>Protocol</h4></header>
 	    <output id=log style="display: block; font-family: monospace; margin: 5px 0;">Please Wait</output>
 	</div>
+	<fieldset class=card style="border:none;margin:0">
+	    <header><h4>Max distance from route</h4></header>
+	    <div class=poi-opts>
+	    <label for=water>Water</label>
+		<input id=water type="range" min="0" max="25" step="0.5" value="3" data-unit=km>
+		<output id=water-out></output>
+	    <label class=sub for=waterFilter>Combine adjacent</label>
+		<input id=waterFilter type="range" min="0" max="2000" step="1" value="100" data-unit=m>
+		<output id=waterFilter-out></output>
+
+	    <label for=toilet>Toilets</label>
+		<input id=toilet type="range" min="0" max="25" step="0.5" value="3" data-unit=km>
+		<output id=toilet-out></output>
+	    <label class=sub for=toiletFilter>Combine adjacent</label>
+		<input id=toiletFilter type="range" min="0" max="2000" step="1" value="100" data-unit=m>
+		<output id=toiletFilter-out></output>
+
+	    <label for=gas>24h gas station</label>
+		<input id=gas type="range" min="0" max="25" step="0.5" value="5" data-unit=km>
+		<output id=gas-out></output>
+
+	    <label for=shop>Shop</label>
+		<input id=shop type="range" min="0" max="25" step="0.5" value="3" data-unit=km>
+		<output id=shop-out></output>
+	    <label class=sub for=shopFilter>Combine adjacent</label>
+		<input id=shopFilter type="range" min="0" max="2000" step="1" value="500" data-unit=m>
+		<output id=shopFilter-out></output>
+
+	    <label for=food>Food</label>
+		<input id=food type="range" min="0" max="25" step="0.5" value="3" data-unit=km>
+		<output id=food-out></output>
+	    <label class=sub for=foodFilter>Combine adjacent</label>
+		<input id=foodFilter type="range" min="0" max="2000" step="1" value="500" data-unit=m>
+		<output id=foodFilter-out></output>
+
+	    <label for=shelter>Shelter</label>
+		<input id=shelter type="range" min="0" max="25" step="0.5" value="2" data-unit=km>
+		<output id=shelter-out></output>
+	    <label class=sub for=shelterFilter>Combine adjacent</label>
+		<input id=shelterFilter type="range" min="0" max="2000" step="1" value="100" data-unit=m>
+		<output id=shelterFilter-out></output>
+
+	    <label for=cemetery>Cemetery</label>
+		<input id=cemetery type="range" min="0" max="25" step="0.5" value="1" data-unit=km>
+		<output id=cemetery-out></output>
+
+	    <label for=camping>Camp site</label>
+		<input id=camping type="range" min="0" max="25" step="0.5" value="0" data-unit=km>
+		<output id=camping-out></output>
+
+	    <label for=bicycle_shop>Bicycle Repair</label>
+		<input id=bicycle_shop type="range" min="0" max="25" step="0.5" value="20" data-unit=km>
+		<output id=bicycle_shop-out></output>
+	</div></fieldset>
     </form>
-    <h2>Description</h2>
-    Feed in a GPX-Route to find some useful POIs (water, toilet, food, 24h gas stations with shops, bicylce shop, camping, shelter, cementery) near your Route.<br>
+    <h2 id=info>Description</h2>
+    Feed in a GPX-Route to find some useful POIs near your Route.<br>
     Output is a KML file to be used with your favorite Map-App. I'am using <a href="https://alpinequest.net/">AlpineQuest</a>.<br>
-    <h2>Notes:</h2>
+    <h3>Notes</h3>
     <ul>
 	<li>POIs are fetched with <a href="https://overpass-turbo.eu/">Overpass-API</a> form the <a href="https://www.openstreetmap.org/#map=6/51.330/10.453">OSM</a> Project</li>
 	<li>Nothing is sent to my server.</li>
 	<li>Of course results depends on the quality of the OSM Data for the aera.</li>
 	<li>24h gas stations may be fully automated - read the details of each POI!</li>
-	<li>If you like different search query and or/distance <a href="https://github.com/tbsmark86/pois">fork this on github</a> and use it as a CLI tool.</li>
+	<li>If you want different search querys <a href="https://github.com/tbsmark86/pois">fork this on github</a> and use it as a CLI tool.</li>
     </ul>
+    <h3>Privacy</h3>
+    The Overpass Server of the OSM Project will see the gist of your Route. Referrer to them for more Information. My Server never sees the route or the POIs.
 </body>

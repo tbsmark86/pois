@@ -16,7 +16,17 @@ for(let i = 2; i < process.argv.length; ++i) {
     }
     console.log(`Read Input ${file} ...`);
     const input = await fs.readFile(file, { encoding: 'utf8' });
-    const output = await process_gpx_string(input, file);
+    const output = await process_gpx_string(input, file, {
+	cementery: 1,
+	shelter: 2,
+	toilet: 3,
+	water: 3,
+	gas: 5,
+	shop: 3,
+	food: 3,
+	camping: 10,
+	bicycle_shop: 20
+    });
     console.log(`Write Output ${target} ...`);
     await fs.writeFile(target, output, 'utf8');
 }

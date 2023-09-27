@@ -74,8 +74,14 @@ async function handleUpload(evt) {
 	let job = new Promise((resolve, reject) => {
 	    reader.onload = async function(e) {
 		const input = e.target.result;
-		log(`Fecthing POIs ...`);
-		const output = await process_gpx_string(input);
+		log(`Fetching POIs ...`);
+
+		let opt =  {};
+		for(const node of document.querySelectorAll('.poi-opts input')) {
+		    opt[node.id] = node.valueAsNumber || undefined;
+		}
+
+		const output = await process_gpx_string(input, 'upload', opt);
 		log(`Save File as KML ...`);
 		await downloadFile(suggestedName, output);
 		resolve(e);
@@ -97,8 +103,23 @@ async function handleUpload(evt) {
     }
 }
 
+function handleInputChange() {
+    var val = this.valueAsNumber;
+    var unit = this.dataset.unit;
+    if(!val) {
+	val = 'Off';
+    } else { 
+	val = `${this.value} ${unit}`;
+    }
+    document.getElementById(`${this.id}-out`).textContent = val;
+}
+
 window.startApp = function() {
     document.getElementById('gpxfile').addEventListener('change', handleUpload);
+    for(const node of document.querySelectorAll('.poi-opts input')) {
+	node.addEventListener('change', handleInputChange);
+	handleInputChange.call(node);
+    }
     log(false); // clear
     log('Ready!');
 };

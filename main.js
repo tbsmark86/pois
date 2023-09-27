@@ -34,7 +34,7 @@ async function  make_kml_document(folder, name, func, open = '1') {
     console.log(`... found: ${data.length}`);
 }
 
-export async function process_gpx_string(input, filename) {
+export async function process_gpx_string(input, filename, opt) {
     console.log(`Parse Input ${filename}`);
     const parser = GpxParser.default ? new GpxParser.default() : new GpxParser();
     const gpx = await parser.parse(input);
@@ -53,12 +53,14 @@ export async function process_gpx_string(input, filename) {
     for(const trk of gpx.trk) {
 	const points = trk.trkseg.trkpt;
 	const trk_name = trk.name || 'Unnamed';
-	const box_1 = getBoundingBox(points, 1);
-	const box_2 = getBoundingBox(points, 2);
-	const box_3 = getBoundingBox(points, 3);
-	const box_5 = getBoundingBox(points, 5);
-	const box_10 = getBoundingBox(points, 10);
-	const box_20 = getBoundingBox(points, 10);
+
+	let boxes = {};
+	function getBox(size) {
+	    if(!boxes[size]) {
+		boxes[size] = getBoundingBox(points, size);
+	    }
+	    return boxes[size];
+	}
 
 	let folder;
 	if(multi_trk) {
@@ -74,16 +76,33 @@ export async function process_gpx_string(input, filename) {
 	    folder = kml;
 	}
 
-	await make_kml_document(folder, 'Cementry', () => findCemetery(box_1), '0');
-	await make_kml_document(folder, 'Shelter', () => findShelter(box_2), '0');
-	await make_kml_document(folder, 'Toilets', () => findToilets(box_3));
-	await make_kml_document(folder, 'Water', () => findWater(box_3));
-	await make_kml_document(folder, '24h Fuel', () => findTanke(box_5));
-	await make_kml_document(folder, 'Shops', () => findShops(box_3));
-	await make_kml_document(folder, 'Food', () => findFood(box_3));
-
-	await make_kml_document(folder, 'Camping', () => findCamping(box_10), '0');
-	await make_kml_document(folder, 'Bicyle Shop', () => findRepair(box_20), '0');
+	if(opt.cemetery) {
+	    await make_kml_document(folder, 'Cemetery', () => findCemetery(getBox(opt.cemetery)), '0');
+	}
+	if(opt.shelter) {
+	    await make_kml_document(folder, 'Shelter', () => findShelter(getBox(opt.shelter, opt.shelterFilter)), '0');
+	}
+	if(opt.toilet) {
+	    await make_kml_document(folder, 'Toilets', () => findToilets(getBox(opt.toilet, opt.toiletFilter)));
+	}
+	if(opt.water) {
+	    await make_kml_document(folder, 'Water', () => findWater(getBox(opt.water, opt.waterFilter)));
+	}
+	if(opt.gas) {
+	    await make_kml_document(folder, '24h Fuel', () => findTanke(getBox(opt.gas)));
+	}
+	if(opt.shop) {
+	    await make_kml_document(folder, 'Shops', () => findShops(getBox(opt.shop, opt.shopFilter)));
+	}
+	if(opt.food) {
+	    await make_kml_document(folder, 'Food', () => findFood(getBox(opt.food, opt.foodFilter)));
+	}
+	if(opt.camping) {
+	    await make_kml_document(folder, 'Camping', () => findCamping(getBox(opt.camping)), '0');
+	}
+	if(opt.bicycle_shop) {
+	    await make_kml_document(folder, 'Bicycle Shop', () => findRepair(getBox(opt.bicycle_shop)), '0');
+	}
     }
     console.log('Write Output');
     const builder = new xml2js.Builder({rootName: 'kml'});
