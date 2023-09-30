@@ -30,7 +30,9 @@ function log(string) {
 }
 
 async function downloadFile(suggestedName, content) {
-    if(window.showSaveFilePicker) {
+    if(false && window.showSaveFilePicker) {
+	// XXX sadly not working. Due to promise chain requried user interaction
+	// is missing.
 	try {
 	    const handle = await window.showSaveFilePicker({suggestedName });
 	    const writable = await handle.createWritable();
@@ -56,6 +58,8 @@ async function downloadFile(suggestedName, content) {
 	    URL.revokeObjectURL(blobURL);
 	    a.remove();
 	}, 1000);
+	log(`Your browser should now "download" the generated file.`);
+	log(`Ready for next file!`);
     }
 }
 
