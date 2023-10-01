@@ -80,22 +80,22 @@ export async function process_gpx_string(input, filename, opt) {
 	    await make_kml_document(folder, 'Cemetery', () => findCemetery(getBox(opt.cemetery)), '0');
 	}
 	if(opt.shelter) {
-	    await make_kml_document(folder, 'Shelter', () => findShelter(getBox(opt.shelter, opt.shelterFilter)), '0');
+	    await make_kml_document(folder, 'Shelter', () => findShelter(getBox(opt.shelter), opt.shelterFilter), '0');
 	}
 	if(opt.toilet) {
-	    await make_kml_document(folder, 'Toilets', () => findToilets(getBox(opt.toilet, opt.toiletFilter)));
+	    await make_kml_document(folder, 'Toilets', () => findToilets(getBox(opt.toilet), opt.toiletFilter));
 	}
 	if(opt.water) {
-	    await make_kml_document(folder, 'Water', () => findWater(getBox(opt.water, opt.waterFilter)));
+	    await make_kml_document(folder, 'Water', () => findWater(getBox(opt.water), opt.waterFilter));
 	}
 	if(opt.gas) {
 	    await make_kml_document(folder, '24h Fuel', () => findTanke(getBox(opt.gas)));
 	}
 	if(opt.shop) {
-	    await make_kml_document(folder, 'Shops', () => findShops(getBox(opt.shop, opt.shopFilter)));
+	    await make_kml_document(folder, 'Shops', () => findShops(getBox(opt.shop), opt.shopFilter));
 	}
 	if(opt.food) {
-	    await make_kml_document(folder, 'Food', () => findFood(getBox(opt.food, opt.foodFilter)));
+	    await make_kml_document(folder, 'Food', () => findFood(getBox(opt.food), opt.foodFilter));
 	}
 	if(opt.camping) {
 	    await make_kml_document(folder, 'Camping', () => findCamping(getBox(opt.camping)), '0');

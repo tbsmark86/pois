@@ -81,7 +81,7 @@ function calcDistance(latlng1, latlng2) {
     return R * c;
 }
 
-/* Mark points that are near each other with an extra field 'skip' 
+/* Remove points that are near each other
  * distance is in meters
  * prefer function(cur, other) return the element to skip.
  */
@@ -101,7 +101,7 @@ function filterNearbyPois(pois, distance, prefer) {
 	for(let j = i+1; j < pois.length; j++) {
 	    const other = pois[j];
 	    const otherPos = other.center ? other.center : other;
-	    if(!other.done && calcDistance(pos, otherPos) < distance) {
+	    if(!other.skip && calcDistance(pos, otherPos) < distance) {
 		const decision = prefer(ele, other);
 		if(decision === ele) {
 		    ele.skip = true;
