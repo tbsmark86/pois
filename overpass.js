@@ -329,7 +329,11 @@ export function findShops(box, filter = 500) {
 	elements = filterNearbyPois(elements, filter, (ele, other) => {
 	    const type = ele.tags.shop;
 	    const otherType = other.tags.shop;
-	    if(otherType === 'supermarket' && type !== otherType) {
+	    if(ele.tags.opening_hours === '24/7') {
+		return other; // always prefer 24/7 shop of course
+	    } else if(other.tags.opening_hours === '24/7') {
+		return ele;
+	    } else if(otherType === 'supermarket' && type !== otherType) {
 		return ele; // skip current keep next
 	    } else if(otherType === 'convenience' && type !== 'supermarket') {
 		return ele; // skip current keep next
@@ -340,6 +344,9 @@ export function findShops(box, filter = 500) {
 	});
 	return elements.map((ele) => {
 	    let type = ele.tags.shop;
+	    if(ele.tags.opening_hours === '24/7') {
+		type = `24h-${type}`;
+	    }
 	    return makePoi(ele, type, 'Shoping Center');
 	});
     });
@@ -358,14 +365,21 @@ export function findFood(box, filter = 1000) {
 	elements = filterNearbyPois(elements, filter, (ele, other) => {
 	    const type = ele.tags.amenity;
 	    const otherType = other.tags.amenity;
-	    if(otherType === 'fast_food' && type !== otherType) {
+	    if(ele.tags.opening_hours === '24/7') {
+		return other; // always prefer 24/7 shop of course
+	    } else if(other.tags.opening_hours === '24/7') {
 		return ele;
-	    } else  {
+	    } else if(otherType === 'fast_food' && type !== otherType) {
+		return ele; // prefer fast_food
+	    } else {
 		return other; // skip other
 	    }
 	});
 	return elements.map((ele) => {
 	    let type = ele.tags.amenity;
+	    if(ele.tags.opening_hours === '24/7') {
+		type = `24h-${type}`;
+	    }
 	    return makePoi(ele, type, 'Italian Food');
 	});
     });
