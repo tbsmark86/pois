@@ -222,6 +222,9 @@ export function findTanke(box) {
 		    return false;
 		}
 
+	    } else if(ele.tags['name'] === 'Tankpool24') {
+		// automated brand in Germany
+		return false;
 	    }
 	    return true;
 	});
