@@ -49,10 +49,25 @@ export async function process_gpx_string(input, filename, opt) {
 	kml.Document = [];
     }
 
-    // might be more then one
+    // might be more than one
     for(const trk of gpx.trk) {
-	const points = trk.trkseg.trkpt;
 	const trk_name = trk.name || 'Unnamed';
+
+	let points;
+	if(Array.isArray(trk.trkseg)) {
+	    // might also be more than one
+	    points = [];
+	    for (const seg of trk.trkseg) {
+		points = points.concat(seg.trkpt);
+	    }
+	} else {
+	    points = trk.trkseg.trkpt;
+	}
+
+	if(points.length === 0) {
+	    alert('Track without any points? Ignored.');
+	    continue;
+	}
 
 	let boxes = {};
 	function getBox(size) {
