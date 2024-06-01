@@ -157,6 +157,7 @@ export function findWater(box, filter = 150) {
 	node[amenity~"(^drinking_water|water_point$)"]
 	    [access!=private]
 	    [access!=no]
+	    [access!=customers]
 	    [access!=permissive]
 	    ${box2poly(box)};
 	out;
@@ -254,6 +255,7 @@ export function findToilets(box, filter = 100) {
     const query = `
 	[out:json];
 	node[amenity=toilets]
+	    [access!=private]
 	    [access!=no]
 	    [access!=customers]
 	    [access!=permissive]
