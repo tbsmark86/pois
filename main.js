@@ -38,6 +38,9 @@ export async function process_gpx_string(input, filename, opt) {
     console.log(`Parse Input ${filename}`);
     const parser = GpxParser.default ? new GpxParser.default() : new GpxParser();
     const gpx = await parser.parse(input);
+    if(!gpx.trk) {
+	throw new Error('No Track found');
+    }
 
     const multi_trk = gpx.trk.length;
     let kml = {

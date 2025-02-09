@@ -85,9 +85,22 @@ async function handleUpload(evt) {
 		    opt[node.id] = node.valueAsNumber || undefined;
 		}
 
-		const output = await process_gpx_string(input, 'upload', opt);
+		let output;
+		try {
+		    output = await process_gpx_string(input, 'upload', opt);
+		} catch(err) {
+		    log('Error while processing');
+		    reject(err);
+		    return;
+		}
 		log(`Save File as KML ...`);
-		await downloadFile(suggestedName, output);
+		try {
+		    await downloadFile(suggestedName, output);
+		} catch(err) {
+		    log('Error while downloading');
+		    reject(err);
+		    return;
+		}
 		resolve(e);
 	    };
 	    reader.onerror = function(err) {
@@ -101,7 +114,7 @@ async function handleUpload(evt) {
 	    log(`Done ${f.name}`);
 	} catch(err) {
 	    log(`Failed ${f.name}`);
-	    console.error(`Failed File: ${job}`);
+	    console.error(`Failed File`);
 	    console.error(err);
 	}
     }
